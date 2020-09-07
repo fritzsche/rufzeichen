@@ -79,10 +79,15 @@
     width: 150px;
   }
   
-  #txt {
-    height: 10em;
-  }
-  
+#out .ok {
+  color: greenyellow;  
+}
+
+#out .error {
+  color: red;  
+}
+
+
 #out {
   width:100%; 
   height: 3em;

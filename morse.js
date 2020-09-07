@@ -324,34 +324,79 @@ audioCtx.resume().then(() => {
 });
 */
 
-
-
+// durty global variable
 let wpm = document.getElementById("wpm").value;
 let fw = document.getElementById("fw").value;
-
 let m = new Morse(audioCtx, wpm, freq, fw);
+let calls = [];
+
+var index = -1;
 
 const out = document.getElementById("out");
+
+function morse() {
+    if (calls.length == 0) return;  
+    let freq = document.getElementById("freq").value;
+//    let morseTxt = document.getElementById("txt").value;
+    let wpm = document.getElementById("wpm").value;
+    let fw = document.getElementById("fw").value;
+    m.text = calls[index];
+    m.frequency = freq;
+    m.wpm = wpm;
+    m.farnsworth = fw;
+    m.start();
+}
+
+function morse_new() {
+    index = Math.floor(Math.random() * calls.length); 
+    document.getElementById("txt").value = '';
+    document.getElementById("txt").focus();
+    morse();
+}
+
+function loadCalls() {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+            calls = this.responseText.split("\n").filter(x => x.length > 3 && x.length <= 6);
+           
+            document.getElementById("txt").onkeyup =  e => {
+               let position = e.target.selectionStart 
+               var str =  e.target.value;
+               e.target.value = str.toUpperCase();
+              
+                if (e.key === 'Enter' || e.keyCode === 13) {
+                    if (index != -1) {
+                        out.innerHTML += `<span class="${calls[index] == e.target.value ? 'ok':'error'}">(${calls[index]} / ${e.target.value})</span> `;
+                        out.scrollTop = out.scrollHeight;
+                    }
+                      
+                    
+                    morse_new();
+                    e.preventDefault();
+                }
+                if (e.key === 'Space' || e.keyCode === 32) {
+                    morse();
+                    e.target.value = e.target.value.split(' ').join('');
+                    position--;
+                }
+                e.target.selectionEnd = position;                   
+            };
+        }
+    };
+    xhttp.open("GET", "calls.txt", true);
+    xhttp.send();
+}
+loadCalls();
+
+
 //m.text = morseTxt;
 m.displayCallback = (ev) => {
-    out.textContent = ev.text;
-    out.scrollTop = out.scrollHeight;
+/*    out.textContent = ev.text;
+    out.scrollTop = out.scrollHeight;*/
 }
 const button = document.querySelector('button');
 
 button.onclick = function () {
-    switch (m.state) {
-        case 'STARTED': m.stop(); break;
-        default:
-            let freq = document.getElementById("freq").value;
-            let morseTxt = document.getElementById("txt").value;
-            let wpm = document.getElementById("wpm").value;
-            let fw = document.getElementById("fw").value;
-            m.text = morseTxt;
-            m.frequency = freq;
-            m.wpm = wpm;
-            m.farnsworth = fw;
-            m.start();
-            break;
-    }
+  morse_new();
 }
