@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#000000" />  
+  <link rel="stylesheet" href="style.css" type="text/css" media="screen" />
+  <title>Morse Player</title>
+</head>
+
+<body>
+  <h1>Simple Morse Player</h1>
+  <h2>Output</h2>
+  <p>
+    <div id="out"></div>
+  </p>
+  <h2>General</h2>
+  <p>
+    <label for="wpm"> WPM </label>
+    <input id="wpm" type="number" min="5" max="40" step="1" value="17">
+  </p>
+  <p>
+    <label for="fw">Farnsworth </label>
+    <input id="fw" type="number" min="5" max="40" step="1" value="5">
+  </p>
+  <p>
+    <label for="freq"> Frequency </label>
+    <input id="freq" type="number" min="500" max="900" step="10" value="650">
+  </p>
+  <div class="setclear">
+    <h2>Text</h2>
+    <p>
+      <label for="txt">Input</label>
+      <textarea id="txt"></textarea>
+    </p>
+  </div>
+  <div class="setclear">
+    <p>
+      <button class="button">Morse</button>
+    </p>
+  </div>
+  <script src="morse.js"></script>
+</body>
+
+</html>
