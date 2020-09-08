@@ -313,16 +313,58 @@ class Morse {
 }
 let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-/*
-let start = Date.now();
-audioCtx.resume().then(() => {
-    const millis = Date.now() - start;
-    if (millis < 200) {
-        let m = new Morse(audioCtx, 100, 650, 60);
-        m.morse("vvv<ka>");
+
+String.prototype.levenstein = function (string) {
+    var a = this, b = string + "", m = [], i, j, min = Math.min;
+
+    if (!(a && b)) return (b || a).length;
+
+    for (i = 0; i <= b.length; m[i] = [i++]);
+    for (j = 0; j <= a.length; m[0][j] = j++);
+
+    for (i = 1; i <= b.length; i++) {
+        for (j = 1; j <= a.length; j++) {
+            m[i][j] = b.charAt(i - 1) == a.charAt(j - 1)
+                ? m[i - 1][j - 1]
+                : m[i][j] = min(
+                    m[i - 1][j - 1] + 1,
+                    min(m[i][j - 1] + 1, m[i - 1][j] + 1))
+        }
     }
-});
-*/
+    return m;
+}
+
+
+
+const min_edit = (a, b) => {
+    let D = b.levenstein(a);
+
+    const combine = (a, e) => {
+        if (a.length == 0) return [e];
+        let last = a[a.length - 1];
+        if (last.op == e.op) {
+            last.s += e.s;
+            if (last.op == 'UPD') {
+                last.s2 += e.s2;
+            }
+            a[a.length - 1] = last;
+            return a;
+        } else {
+            return a.concat([e]);
+        }
+
+    }
+
+    const backtrace = (i, j) => {
+        if (i > 0 && D[i - 1][j] + 1 == D[i][j]) return combine(backtrace(i - 1, j), { op: 'DEL', s: a.charAt(i - 1) });
+        if (j > 0 && D[i][j - 1] + 1 == D[i][j]) return combine(backtrace(i, j - 1), { op: 'INS', s: b.charAt(j - 1) });
+        if (i > 0 && j > 0 && D[i - 1][j - 1] + 1 == D[i][j]) return combine(backtrace(i - 1, j - 1), { op: 'UPD', s:   b.charAt(j - 1), s2: a.charAt(i - 1)  });
+        if (i > 0 && j > 0 && D[i - 1][j - 1] == D[i][j]) return combine(backtrace(i - 1, j - 1), { op: 'EQ', s: a.charAt(i - 1) });
+        return [];
+    }
+    return (backtrace(a.length, b.length));
+}
+
 
 // durty global variable
 let wpm = document.getElementById("wpm").value;
@@ -335,9 +377,9 @@ var index = -1;
 const out = document.getElementById("out");
 
 function morse() {
-    if (calls.length == 0) return;  
+    if (calls.length == 0) return;
     let freq = document.getElementById("freq").value;
-//    let morseTxt = document.getElementById("txt").value;
+    //    let morseTxt = document.getElementById("txt").value;
     let wpm = document.getElementById("wpm").value;
     let fw = document.getElementById("fw").value;
     m.text = calls[index];
@@ -348,30 +390,42 @@ function morse() {
 }
 
 function morse_new() {
-    index = Math.floor(Math.random() * calls.length); 
-    document.getElementById("txt").value = '';
-    document.getElementById("txt").focus();
-    morse();
+    setTimeout(() => {
+        index = Math.floor(Math.random() * calls.length);
+        document.getElementById("txt").value = '';
+        document.getElementById("txt").focus();
+        morse();
+    }, 1000);
 }
 
 function loadCalls() {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function () {
+
         if (this.readyState == 4 && this.status == 200) {
             calls = this.responseText.split("\n").filter(x => x.length > 3 && x.length <= 6);
-           
-            document.getElementById("txt").onkeyup =  e => {
-               let position = e.target.selectionStart 
-               var str =  e.target.value;
-               e.target.value = str.toUpperCase();
-              
-                if (e.key === 'Enter' || e.keyCode === 13) {
+
+            document.getElementById("txt").onkeyup = e => {
+                let position = e.target.selectionStart
+                var str = e.target.value;
+                e.target.value = str.toUpperCase();
+
+                if (e.key === 'Enter' || e.keyCode === 13 && e.target.value !== '') {
                     if (index != -1) {
-                        out.innerHTML += `<span class="${calls[index] == e.target.value ? 'ok':'error'}">(${calls[index]} / ${e.target.value})</span> `;
+                        let m = min_edit(e.target.value, calls[index]);
+                        let n = m.reduce((prevVal, currVal, idx) => {
+                            var r = prevVal;
+                            r += `<span class="${currVal.op}">${currVal.s}</span>`;
+                            if (currVal.op == 'UPD') r += `<span class="DEL">${currVal.s2}</span>`;
+                            return r;
+                        }, '')
+
+                        out.innerHTML += n + ' ';
+                        //`<span class="${calls[index] == e.target.value ? 'ok' : 'error'}">(${calls[index]} / ${e.target.value})</span> `;
                         out.scrollTop = out.scrollHeight;
                     }
-                      
-                    
+
+
                     morse_new();
                     e.preventDefault();
                 }
@@ -380,8 +434,9 @@ function loadCalls() {
                     e.target.value = e.target.value.split(' ').join('');
                     position--;
                 }
-                e.target.selectionEnd = position;                   
+                e.target.selectionEnd = position;
             };
+            document.getElementById("txt").focus();
         }
     };
     xhttp.open("GET", "calls.txt", true);
@@ -392,11 +447,13 @@ loadCalls();
 
 //m.text = morseTxt;
 m.displayCallback = (ev) => {
-/*    out.textContent = ev.text;
-    out.scrollTop = out.scrollHeight;*/
+    /*    out.textContent = ev.text;
+        out.scrollTop = out.scrollHeight;*/
 }
 const button = document.querySelector('button');
 
 button.onclick = function () {
-  morse_new();
+    morse_new();
 }
+
+
