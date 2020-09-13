@@ -71,9 +71,11 @@ class Morse {
     }
 
     set wpm(w) {
-        if (this._wpm === w) return;
-        this._wpm = Number(wpm);
-
+        if (this._wpm === Number(w)) return;
+        this._wpm = Number(w);
+        this._ditLen = this._ditLength(this._wpm * 5);
+        if (this._farnsworth > this._wpm) this._farnsworth = this._wpm;
+        this._spaceDitLen = this._ditLength(this._farnsworth * 5);        
         if (this._state !== 'INITIAL') {
             this._seqence = this._seqenceEvents(this._conv_to_morse(this._text));
             this._startTime = this._ctx.currentTime - this._seqence[this._currPos].time;
@@ -378,6 +380,10 @@ const out = document.getElementById("out");
 
 function morse() {
     if (calls.length == 0) return;
+    if (index == -1) {
+        morse_new();
+        return;
+    }     
     let freq = document.getElementById("freq").value;
     //    let morseTxt = document.getElementById("txt").value;
     let wpm = document.getElementById("wpm").value;
@@ -390,10 +396,11 @@ function morse() {
 }
 
 function morse_new() {
+    document.getElementById("txt").value = '';
+    document.getElementById("txt").focus();
+    // play sound with 1s delay   
     setTimeout(() => {
         index = Math.floor(Math.random() * calls.length);
-        document.getElementById("txt").value = '';
-        document.getElementById("txt").focus();
         morse();
     }, 1000);
 }
@@ -445,15 +452,5 @@ function loadCalls() {
 loadCalls();
 
 
-//m.text = morseTxt;
-m.displayCallback = (ev) => {
-    /*    out.textContent = ev.text;
-        out.scrollTop = out.scrollHeight;*/
-}
-const button = document.querySelector('button');
-
-button.onclick = function () {
-    morse_new();
-}
 
 
