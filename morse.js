@@ -224,6 +224,7 @@ class Morse {
                                 seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'PLAY', tone: '_' });
                                 current += this._ditLen * 3;
                                 currDits += 2;
+                                break;
                             case '*':
                                 current += this._ditLen;
                                 break;
